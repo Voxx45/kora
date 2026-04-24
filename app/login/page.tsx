@@ -26,7 +26,8 @@ export default function LoginPage() {
     }
 
     const params = new URLSearchParams(window.location.search)
-    const redirectTo = params.get('redirectTo') ?? '/admin/dashboard'
+    const raw = params.get('redirectTo') ?? ''
+    const redirectTo = raw.startsWith('/') ? raw : '/admin/dashboard'
     router.push(redirectTo)
     router.refresh()
   }
@@ -65,10 +66,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-[1px] mb-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <label htmlFor="login-email" className="block text-[10px] font-semibold uppercase tracking-[1px] mb-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
               Email
             </label>
             <input
+              id="login-email"
               type="email"
               required
               value={email}
@@ -83,10 +85,11 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-[1px] mb-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <label htmlFor="login-password" className="block text-[10px] font-semibold uppercase tracking-[1px] mb-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
               Mot de passe
             </label>
             <input
+              id="login-password"
               type="password"
               required
               value={password}
