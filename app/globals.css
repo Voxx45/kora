@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @theme {
   /* Police */
@@ -28,18 +27,11 @@
   --color-kora-info: #007AFF;
 
   /* === Border radius === */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-full: 100px;
-}
-
-/* Resets */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  --radius-kora-sm: 8px;
+  --radius-kora-md: 12px;
+  --radius-kora-lg: 16px;
+  --radius-kora-xl: 22px;
+  --radius-kora-full: 100px;
 }
 
 body {
