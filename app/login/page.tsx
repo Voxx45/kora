@@ -29,7 +29,6 @@ export default function LoginPage() {
     const raw = params.get('redirectTo') ?? ''
     const redirectTo = raw.startsWith('/') ? raw : '/admin/dashboard'
     router.push(redirectTo)
-    router.refresh()
   }
 
   return (
