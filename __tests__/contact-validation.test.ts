@@ -39,4 +39,8 @@ describe('validateContactPayload', () => {
   it('rejette si payload non-objet', () => {
     expect(validateContactPayload('string')).toBe(false)
   })
+
+  it('rejette si prenom whitespace seulement', () => {
+    expect(validateContactPayload({ ...valid, prenom: '   ' })).toBe(false)
+  })
 })
