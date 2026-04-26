@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { SectionLabel } from '@/components/SectionLabel'
 import { ServiceCard } from '@/components/ServiceCard'
 import { CtaBand } from '@/components/CtaBand'
@@ -34,19 +35,19 @@ export default function HomePage() {
           On transforme votre présence digitale en moteur de croissance.
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
-          <a
+          <Link
             href="/contact"
             className="text-[12px] font-semibold px-6 py-[11px] rounded-[100px] bg-[#1C1C1E] text-white hover:bg-[#2C2C2E] transition-colors"
           >
             Démarrer un projet →
-          </a>
-          <a
+          </Link>
+          <Link
             href="/portfolio"
             className="text-[12px] font-medium px-6 py-[11px] rounded-[100px] hover:bg-black/10 transition-colors"
             style={{ background: 'rgba(0,0,0,0.06)', color: '#1C1C1E' }}
           >
             Voir les réalisations
-          </a>
+          </Link>
         </div>
       </section>
 

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 })
   }
 
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_FROM) {
     console.error('[contact] SMTP env vars not configured')
     return NextResponse.json({ error: 'Service temporairement indisponible' }, { status: 503 })
   }

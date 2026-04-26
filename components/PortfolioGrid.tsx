@@ -20,7 +20,7 @@ const FILTERS = [
   { value: 'all', label: 'Tous' },
   { value: 'site-web', label: 'Site web' },
   { value: 'identite', label: 'Identité' },
-  { value: 'seo', label: 'SEO & Print' },
+  { value: 'seo', label: 'SEO local' },
 ] as const
 
 type FilterValue = typeof FILTERS[number]['value']
