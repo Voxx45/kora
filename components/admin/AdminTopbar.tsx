@@ -19,7 +19,11 @@ interface AdminTopbarProps {
 
 export function AdminTopbar({ actions }: AdminTopbarProps) {
   const pathname = usePathname()
-  const pageLabel = PAGE_LABELS[pathname] ?? 'Admin'
+  const pageLabel = (() => {
+    if (PAGE_LABELS[pathname]) return PAGE_LABELS[pathname]
+    if (/^\/admin\/prospects\/[^/]+$/.test(pathname)) return 'Fiche prospect'
+    return 'Admin'
+  })()
 
   return (
     <div
