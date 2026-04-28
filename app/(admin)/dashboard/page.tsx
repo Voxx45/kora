@@ -1,60 +1,111 @@
-import { AdminTopbar } from '@/components/admin/AdminTopbar'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { KpiCard } from '@/components/admin/KpiCard'
-import { DataTable, type DataTableColumn } from '@/components/admin/DataTable'
-import { Badge } from '@/components/Badge'
-import { Button } from '@/components/Button'
+import { DataTable } from '@/components/admin/DataTable'
+import { AdminTopbar } from '@/components/admin/AdminTopbar'
+import { ScoreBadge } from '@/components/admin/ScoreBadge'
+import { PipelineBadge } from '@/components/admin/StatusBadge'
+import type { Prospect } from '@/types/crm'
 
-interface MockLead { id: string; name: string; score: string; status: string; relance: string }
+export default async function DashboardPage() {
+  const supabase = await createSupabaseServerClient()
 
-const MOCK_LEADS: MockLead[] = [
-  { id: '1', name: '🍕 Pizzeria Napoli', score: '94/100', status: 'hot',  relance: "Aujourd'hui" },
-  { id: '2', name: '🔧 Plombier Dupont', score: '81/100', status: 'warm', relance: 'Demain' },
-  { id: '3', name: '✂ Salon L\'Élégance', score: '76/100', status: 'new', relance: 'Lundi' },
-]
+  const [
+    { count: hotLeads },
+    { count: activeProjects },
+    { count: followups },
+    { data: pipelineRows },
+    { data: recentProspects },
+  ] = await Promise.all([
+    supabase
+      .from('prospects')
+      .select('*', { count: 'exact', head: true })
+      .gte('score', 80)
+      .not('pipeline_stage', 'in', '("gagne","perdu")'),
+    supabase
+      .from('projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('statut', 'en_cours'),
+    supabase
+      .from('prospects')
+      .select('*', { count: 'exact', head: true })
+      .not('next_followup_at', 'is', null)
+      .lte('next_followup_at', new Date(Date.now() + 86_400_000).toISOString())
+      .not('pipeline_stage', 'in', '("gagne","perdu")'),
+    supabase
+      .from('prospects')
+      .select('valeur_estimee')
+      .not('pipeline_stage', 'in', '("gagne","perdu")'),
+    supabase
+      .from('prospects')
+      .select('id,entreprise,prenom,score,pipeline_stage,next_followup_at')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ])
 
-const COLUMNS: DataTableColumn<MockLead>[] = [
-  { key: 'name', label: 'Entreprise', width: '2fr', render: r => <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{r.name}</span> },
-  { key: 'score', label: 'Score', width: '0.8fr' },
-  {
-    key: 'status', label: 'Statut', width: '1fr',
-    render: r => (
-      <Badge variant={r.status as 'hot' | 'warm' | 'new'}>
-        {r.status === 'hot' ? '🔥 Chaud' : r.status === 'warm' ? '⚡ Contacté' : '✦ Nouveau'}
-      </Badge>
-    ),
-  },
-  { key: 'relance', label: 'Relance', width: '1fr' },
-]
+  const pipeline = (pipelineRows ?? []).reduce(
+    (sum: number, r: { valeur_estimee: number | null }) => sum + (r.valeur_estimee ?? 0),
+    0
+  )
 
-export default function DashboardPage() {
+  const fmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+
   return (
-    <>
-      <AdminTopbar
-        actions={
-          <Button variant="secondary" size="sm" className="text-white/70 border-white/10 bg-white/[0.07] hover:bg-white/10">
-            + Nouveau scan
-          </Button>
-        }
-      />
-      <main className="flex-1 p-5 overflow-y-auto">
-        <h1 className="text-[16px] font-bold text-white mb-4">Tableau de bord</h1>
+    <div className="flex flex-col h-full">
+      <AdminTopbar />
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-2 mb-4">
-          <KpiCard value="24" label="Leads chauds"       delta="↑ +6 cette semaine" deltaVariant="up" />
-          <KpiCard value="3"  label="Projets actifs"     delta="2 en attente"        deltaVariant="warning" />
-          <KpiCard value="7"  label="Relances"           delta="⚠ Priorité"          deltaVariant="alert" />
-          <KpiCard value="2 400 €" label="Pipeline estimé" delta="↑ ce mois"         deltaVariant="up" />
+        <div className="grid grid-cols-4 gap-3">
+          <KpiCard label="Leads chauds" value={String(hotLeads ?? 0)} />
+          <KpiCard label="Projets actifs" value={String(activeProjects ?? 0)} />
+          <KpiCard label="Relances (24h)" value={String(followups ?? 0)} />
+          <KpiCard label="Pipeline estimé" value={fmt.format(pipeline)} />
         </div>
 
-        {/* Table */}
-        <DataTable
-          columns={COLUMNS}
-          rows={MOCK_LEADS}
-          keyExtractor={r => r.id}
-          emptyMessage="Aucun prospect pour le moment"
-        />
-      </main>
-    </>
+        {/* Table derniers prospects */}
+        <div>
+          <div className="text-[11px] font-semibold mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Derniers prospects
+          </div>
+          <DataTable<Prospect>
+            columns={[
+              {
+                key: 'entreprise',
+                label: 'Entreprise',
+                render: (r: Prospect) => r.entreprise ?? r.prenom,
+              },
+              {
+                key: 'score',
+                label: 'Score',
+                render: (r: Prospect) => <ScoreBadge score={r.score} />,
+              },
+              {
+                key: 'pipeline_stage',
+                label: 'Statut',
+                render: (r: Prospect) => <PipelineBadge stage={r.pipeline_stage} />,
+              },
+              {
+                key: 'next_followup_at',
+                label: 'Relance',
+                render: (r: Prospect) => {
+                  if (!r.next_followup_at) return <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
+                  const d = new Date(r.next_followup_at)
+                  const late = d < new Date()
+                  return (
+                    <span style={{ color: late ? '#FF453A' : 'rgba(255,255,255,0.6)' }}>
+                      {d.toLocaleDateString('fr-FR')}
+                    </span>
+                  )
+                },
+              },
+            ]}
+            rows={(recentProspects ?? []) as Prospect[]}
+            keyExtractor={(r: Prospect) => r.id}
+            emptyMessage="Aucun prospect pour l'instant"
+          />
+        </div>
+
+      </div>
+    </div>
   )
 }
