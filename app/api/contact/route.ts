@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import { validateContactPayload } from '@/lib/contact-validation'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,6 +56,24 @@ export async function POST(request: Request) {
         <p>${escapeHtml(message).replace(/\n/g, '<br />')}</p>
       `,
     })
+    // Bridge → CRM (best-effort, ne bloque pas la réponse)
+    try {
+      const supabase = await createSupabaseServerClient()
+      await supabase.from('prospects').insert({
+        source:            'contact_form',
+        prenom:            body.prenom,
+        email:             body.email,
+        telephone:         body.telephone         ?? null,
+        entreprise:        body.entreprise        ?? null,
+        service_interesse: body.service,
+        message:           body.message,
+        score:             50,
+        pipeline_stage:    'nouveau',
+      })
+    } catch (crmErr) {
+      console.error('[CRM bridge] insert failed:', crmErr)
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[contact] sendMail error', err)
