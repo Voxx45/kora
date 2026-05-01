@@ -1,9 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { KpiCard } from '@/components/admin/KpiCard'
-import { DataTable } from '@/components/admin/DataTable'
 import { AdminTopbar } from '@/components/admin/AdminTopbar'
-import { ScoreBadge } from '@/components/admin/ScoreBadge'
-import { PipelineBadge } from '@/components/admin/StatusBadge'
+import { DashboardProspects } from '@/components/admin/DashboardProspects'
 import type { Prospect } from '@/types/crm'
 
 export default async function DashboardPage() {
@@ -37,7 +35,7 @@ export default async function DashboardPage() {
       .not('pipeline_stage', 'in', '("gagne","perdu")'),
     supabase
       .from('prospects')
-      .select('id,entreprise,prenom,score,pipeline_stage,next_followup_at')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(10),
   ])
@@ -67,42 +65,7 @@ export default async function DashboardPage() {
           <div className="text-[11px] font-semibold mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Derniers prospects
           </div>
-          <DataTable<Prospect>
-            columns={[
-              {
-                key: 'entreprise',
-                label: 'Entreprise',
-                render: (r: Prospect) => r.entreprise ?? r.prenom,
-              },
-              {
-                key: 'score',
-                label: 'Score',
-                render: (r: Prospect) => <ScoreBadge score={r.score} />,
-              },
-              {
-                key: 'pipeline_stage',
-                label: 'Statut',
-                render: (r: Prospect) => <PipelineBadge stage={r.pipeline_stage} />,
-              },
-              {
-                key: 'next_followup_at',
-                label: 'Relance',
-                render: (r: Prospect) => {
-                  if (!r.next_followup_at) return <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>
-                  const d = new Date(r.next_followup_at)
-                  const late = d < new Date()
-                  return (
-                    <span style={{ color: late ? '#FF453A' : 'rgba(255,255,255,0.6)' }}>
-                      {d.toLocaleDateString('fr-FR')}
-                    </span>
-                  )
-                },
-              },
-            ]}
-            rows={(recentProspects ?? []) as Prospect[]}
-            keyExtractor={(r: Prospect) => r.id}
-            emptyMessage="Aucun prospect pour l'instant"
-          />
+          <DashboardProspects prospects={(recentProspects ?? []) as Prospect[]} />
         </div>
 
       </div>

@@ -1,12 +1,12 @@
 'use client'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { deleteProspect } from '@/lib/actions/prospects'
 import { ProspectForm } from '@/components/admin/ProspectForm'
 import { ScoreBadge } from '@/components/admin/ScoreBadge'
 import { PipelineBadge } from '@/components/admin/StatusBadge'
 import { DataTable } from '@/components/admin/DataTable'
+import { useDrawer } from '@/lib/contexts/drawer-context'
 import type { Prospect, PipelineStage } from '@/types/crm'
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -28,6 +28,7 @@ interface Props { prospects: Prospect[] }
 
 export function ProspectsClient({ prospects }: Props) {
   const router = useRouter()
+  const { openDrawer } = useDrawer()
   const [filter, setFilter] = useState<PipelineStage | 'all'>('all')
   const [formOpen, setFormOpen] = useState(false)
   const [, startTransition] = useTransition()
@@ -36,7 +37,8 @@ export function ProspectsClient({ prospects }: Props) {
   const visible = filter === 'all' ? prospects : prospects.filter(p => p.pipeline_stage === filter)
   const sorted = [...visible].sort((a, b) => b.score - a.score)
 
-  function handleDelete(id: string) {
+  function handleDelete(e: React.MouseEvent, id: string) {
+    e.stopPropagation()
     if (!confirm('Supprimer ce prospect ?')) return
     startTransition(async () => {
       await deleteProspect(id)
@@ -103,9 +105,13 @@ export function ProspectsClient({ prospects }: Props) {
                 label: 'Entreprise',
                 width: '2fr',
                 render: (r: Prospect) => (
-                  <Link href={`/admin/prospects/${r.id}`} className="hover:underline" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); openDrawer({ type: 'prospect', data: r }) }}
+                    className="hover:underline text-left"
+                    style={{ color: 'rgba(255,255,255,0.8)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+                  >
                     {r.entreprise ?? r.prenom}
-                  </Link>
+                  </button>
                 ),
               },
               { key: 'source', label: 'Source', render: (r: Prospect) => SOURCE_LABEL[r.source] ?? r.source },
@@ -124,17 +130,21 @@ export function ProspectsClient({ prospects }: Props) {
               {
                 key: 'actions',
                 label: '',
-                width: '80px',
+                width: '60px',
                 render: (r: Prospect) => (
-                  <div className="flex gap-2">
-                    <Link href={`/admin/prospects/${r.id}`} className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>✏</Link>
-                    <button onClick={() => handleDelete(r.id)} className="text-[11px]" style={{ color: 'rgba(255,69,58,0.6)' }}>✕</button>
-                  </div>
+                  <button
+                    onClick={e => handleDelete(e, r.id)}
+                    className="text-[11px]"
+                    style={{ color: 'rgba(255,69,58,0.6)', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
                 ),
               },
             ]}
             rows={sorted}
             keyExtractor={(r: Prospect) => r.id}
+            onRowClick={(r: Prospect) => openDrawer({ type: 'prospect', data: r })}
           />
         )}
       </div>

@@ -51,3 +51,13 @@ export async function deleteProspect(id: string): Promise<void> {
   const { error } = await supabase.from('prospects').delete().eq('id', id)
   if (error) throw new Error(error.message)
 }
+
+export async function updateProspectNotes(id: string, notes: string): Promise<void> {
+  if (!id) throw new Error('Invalid id')
+  const supabase = await createSupabaseServerClient()
+  const { error } = await supabase
+    .from('prospects')
+    .update({ notes, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+}

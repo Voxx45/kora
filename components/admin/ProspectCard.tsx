@@ -1,13 +1,14 @@
 'use client'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import Link from 'next/link'
 import { ScoreBadge } from './ScoreBadge'
+import { useDrawer } from '@/lib/contexts/drawer-context'
 import type { Prospect } from '@/types/crm'
 
 export function ProspectCard({ prospect }: { prospect: Prospect }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: prospect.id })
+  const { openDrawer } = useDrawer()
 
   const now = new Date()
   const followup = prospect.next_followup_at ? new Date(prospect.next_followup_at) : null
@@ -27,14 +28,17 @@ export function ProspectCard({ prospect }: { prospect: Prospect }) {
       {...listeners}
     >
       <div className="flex items-center justify-between">
-        <Link
-          href={`/admin/prospects/${prospect.id}`}
-          onClick={e => e.stopPropagation()}
-          className="text-[11px] font-semibold hover:underline"
-          style={{ color: 'rgba(255,255,255,0.85)' }}
+        <button
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => {
+            e.stopPropagation()
+            openDrawer({ type: 'prospect', data: prospect })
+          }}
+          className="text-[11px] font-semibold hover:underline text-left"
+          style={{ color: 'rgba(255,255,255,0.85)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
           {prospect.entreprise ?? prospect.prenom}
-        </Link>
+        </button>
         <ScoreBadge score={prospect.score} />
       </div>
       {prospect.service_interesse && (

@@ -13,6 +13,7 @@ interface DataTableProps<T> {
   keyExtractor: (row: T) => string
   emptyMessage?: string
   className?: string
+  onRowClick?: (row: T) => void
 }
 
 export function DataTable<T extends object>({
@@ -21,6 +22,7 @@ export function DataTable<T extends object>({
   keyExtractor,
   emptyMessage = 'Aucune donnée',
   className,
+  onRowClick,
 }: DataTableProps<T>) {
   const gridTemplate = columns.map(c => c.width ?? '1fr').join(' ')
 
@@ -60,11 +62,16 @@ export function DataTable<T extends object>({
         rows.map((row, i) => (
           <div
             key={keyExtractor(row)}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
             className="grid px-3.5 py-2.5 items-center"
             style={{
               gridTemplateColumns: gridTemplate,
               borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+              cursor: onRowClick ? 'pointer' : 'default',
+              transition: 'background 100ms',
             }}
+            onMouseEnter={onRowClick ? e => { (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)' } : undefined}
+            onMouseLeave={onRowClick ? e => { (e.currentTarget as HTMLDivElement).style.background = '' } : undefined}
           >
             {columns.map(col => (
               <div key={String(col.key)} className="text-[10.5px]" style={{ color: 'rgba(255,255,255,0.6)' }}>

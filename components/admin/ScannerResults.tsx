@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react'
 import { ScoreBadge } from '@/components/admin/ScoreBadge'
 import { promoteToCRM } from '@/lib/actions/scanner'
+import { useDrawer } from '@/lib/contexts/drawer-context'
 import type { ScanResult } from '@/types/scanner'
 
 interface ScannerResultsProps {
@@ -13,6 +14,7 @@ interface ScannerResultsProps {
 export function ScannerResults({ initialResults, refreshKey }: ScannerResultsProps) {
   const [results, setResults] = useState<ScanResult[]>(initialResults)
   const [isPending, startTransition] = useTransition()
+  const { openDrawer } = useDrawer()
 
   async function refresh() {
     const res = await fetch('/api/scanner/results')
@@ -74,8 +76,14 @@ export function ScannerResults({ initialResults, refreshKey }: ScannerResultsPro
               style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
               className="hover:bg-white/[0.02]"
             >
-              <td className="px-4 py-2.5" style={{ color: '#fff', fontWeight: 500, fontSize: 13 }}>
-                {result.name}
+              <td className="px-4 py-2.5">
+                <button
+                  onClick={() => openDrawer({ type: 'scan_result', data: result })}
+                  className="hover:underline text-left"
+                  style={{ color: '#fff', fontWeight: 500, fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  {result.name}
+                </button>
               </td>
               <td className="px-4 py-2.5" style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
                 {result.city}
@@ -89,6 +97,7 @@ export function ScannerResults({ initialResults, refreshKey }: ScannerResultsPro
                     href={result.website}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
                     style={{ color: '#007AFF', fontSize: 11 }}
                     className="hover:underline"
                   >
