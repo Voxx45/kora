@@ -47,6 +47,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
           value={filters.q}
           onChange={e => onFilterChange({ q: e.target.value, page: 0 })}
           placeholder="Rechercher…"
+          aria-label="Rechercher"
           style={{ ...inputStyle, paddingLeft: 26, width: 200 }}
         />
       </div>
@@ -55,6 +56,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
       <select
         value={filters.type}
         onChange={e => onFilterChange({ type: e.target.value, page: 0 })}
+        aria-label="Secteur"
         style={inputStyle}
       >
         <option value="">Tous les secteurs</option>
@@ -67,6 +69,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
       <select
         value={filters.scorePreset}
         onChange={e => onFilterChange({ scorePreset: e.target.value as FilterState['scorePreset'], page: 0 })}
+        aria-label="Score"
         style={inputStyle}
       >
         <option value="">Tous les scores</option>
@@ -79,6 +82,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
       <select
         value={filters.hasWebsite}
         onChange={e => onFilterChange({ hasWebsite: e.target.value as FilterState['hasWebsite'], page: 0 })}
+        aria-label="Site web"
         style={inputStyle}
       >
         <option value="">Tous (site web)</option>
@@ -89,6 +93,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
       {/* Non promus toggle */}
       <button
         onClick={() => onFilterChange({ nonPromotedOnly: !filters.nonPromotedOnly, page: 0 })}
+        aria-pressed={filters.nonPromotedOnly}
         style={{
           ...inputStyle,
           cursor: 'pointer',
