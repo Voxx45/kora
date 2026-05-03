@@ -9,6 +9,20 @@ export interface ScanResultsResponse {
   total: number
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyFilters(query: any, params: {
+  safeQ: string; type: string; scoreMinNum: number | null; scoreMaxNum: number | null;
+  hasWebsite: string | null; promoted: string | null;
+}) {
+  if (params.safeQ)   query = query.or(`name.ilike.%${params.safeQ}%,city.ilike.%${params.safeQ}%`)
+  if (params.type)    query = query.eq('place_type', params.type)
+  if (params.scoreMinNum !== null && !isNaN(params.scoreMinNum)) query = query.gte('score', params.scoreMinNum)
+  if (params.scoreMaxNum !== null && !isNaN(params.scoreMaxNum)) query = query.lte('score', params.scoreMaxNum)
+  if (params.hasWebsite !== null) query = query.eq('has_website', params.hasWebsite === 'true')
+  if (params.promoted === 'false') query = query.eq('promoted', false)
+  return query
+}
+
 export async function GET(req: NextRequest): Promise<NextResponse<ScanResultsResponse>> {
   const { searchParams } = req.nextUrl
 
@@ -20,42 +34,41 @@ export async function GET(req: NextRequest): Promise<NextResponse<ScanResultsRes
   const promoted   = searchParams.get('promoted')     // 'false' | null
   const sort       = searchParams.get('sort') ?? 'score'
   const order      = searchParams.get('order') ?? 'desc'
-  const offset     = parseInt(searchParams.get('offset') ?? '0', 10)
+  const offset     = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10) || 0)
   const limit      = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
 
   const allowedSort = ['score', 'name', 'city']
   const safeSort = allowedSort.includes(sort) ? sort : 'score'
   const ascending = order === 'asc'
 
+  // Fix 1: sanitize q to prevent PostgREST injection
+  const safeQ = q.replace(/[%(),]/g, '')
+
+  // Fix 2: guard against NaN from empty/null score params
+  const scoreMinNum = scoreMin !== null && scoreMin !== '' ? parseInt(scoreMin, 10) : null
+  const scoreMaxNum = scoreMax !== null && scoreMax !== '' ? parseInt(scoreMax, 10) : null
+
   const supabase = await createSupabaseServerClient()
 
-  // Count query (no range)
-  let countQuery = supabase
-    .from('scan_results')
-    .select('id', { count: 'exact', head: true })
+  const filterParams = { safeQ, type, scoreMinNum, scoreMaxNum, hasWebsite, promoted }
 
-  if (q)            countQuery = countQuery.or(`name.ilike.%${q}%,city.ilike.%${q}%`)
-  if (type)         countQuery = countQuery.eq('place_type', type)
-  if (scoreMin)     countQuery = countQuery.gte('score', parseInt(scoreMin, 10))
-  if (scoreMax)     countQuery = countQuery.lte('score', parseInt(scoreMax, 10))
-  if (hasWebsite !== null) countQuery = countQuery.eq('has_website', hasWebsite === 'true')
-  if (promoted === 'false') countQuery = countQuery.eq('promoted', false)
+  // Fix 5: use shared applyFilters helper to eliminate duplicated filter blocks
+  let countQuery = supabase.from('scan_results').select('id', { count: 'exact', head: true })
+  countQuery = applyFilters(countQuery, filterParams)
 
-  // Data query
   let dataQuery = supabase
     .from('scan_results')
     .select('*')
     .order(safeSort, { ascending })
     .range(offset, offset + limit - 1)
+  dataQuery = applyFilters(dataQuery, filterParams)
 
-  if (q)            dataQuery = dataQuery.or(`name.ilike.%${q}%,city.ilike.%${q}%`)
-  if (type)         dataQuery = dataQuery.eq('place_type', type)
-  if (scoreMin)     dataQuery = dataQuery.gte('score', parseInt(scoreMin, 10))
-  if (scoreMax)     dataQuery = dataQuery.lte('score', parseInt(scoreMax, 10))
-  if (hasWebsite !== null) dataQuery = dataQuery.eq('has_website', hasWebsite === 'true')
-  if (promoted === 'false') dataQuery = dataQuery.eq('promoted', false)
+  // Fix 4: handle Supabase errors
+  const [{ count, error: countError }, { data, error: dataError }] = await Promise.all([countQuery, dataQuery])
 
-  const [{ count }, { data }] = await Promise.all([countQuery, dataQuery])
+  if (countError || dataError) {
+    return NextResponse.json({ results: [], total: 0 }, { status: 500 })
+  }
 
   return NextResponse.json({
     results: data ?? [],
