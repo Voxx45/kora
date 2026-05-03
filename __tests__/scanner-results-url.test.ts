@@ -41,8 +41,8 @@ describe('buildResultsUrl', () => {
     expect(url).not.toContain('score_min')
   })
 
-  it('promotedOnly → promoted=false (afficher uniquement non promus)', () => {
-    const url = buildResultsUrl({ ...DEFAULT_FILTERS, promotedOnly: true })
+  it('nonPromotedOnly → promoted=false (afficher uniquement non promus)', () => {
+    const url = buildResultsUrl({ ...DEFAULT_FILTERS, nonPromotedOnly: true })
     expect(url).toContain('promoted=false')
   })
 

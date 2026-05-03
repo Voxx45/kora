@@ -6,7 +6,7 @@ export interface FilterState {
   // medium → score_min=40 & score_max=59
   // low   → score_max=39
   hasWebsite: '' | 'true' | 'false'
-  promotedOnly: boolean
+  nonPromotedOnly: boolean
   sort: 'score' | 'name' | 'city'
   order: 'asc' | 'desc'
   page: number          // 0-indexed
@@ -17,7 +17,7 @@ export const DEFAULT_FILTERS: FilterState = {
   type: '',
   scorePreset: '',
   hasWebsite: '',
-  promotedOnly: false,
+  nonPromotedOnly: false,
   sort: 'score',
   order: 'desc',
   page: 0,
@@ -31,7 +31,7 @@ export function buildResultsUrl(filters: FilterState): string {
   if (filters.q.trim())        params.set('q', filters.q.trim())
   if (filters.type)            params.set('type', filters.type)
   if (filters.hasWebsite)      params.set('has_website', filters.hasWebsite)
-  if (filters.promotedOnly)    params.set('promoted', 'false')
+  if (filters.nonPromotedOnly)    params.set('promoted', 'false')
 
   if (filters.scorePreset === 'high') {
     params.set('score_min', '60')
