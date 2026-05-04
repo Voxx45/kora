@@ -17,6 +17,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: 12,
   padding: '6px 10px',
   outline: 'none',
+  colorScheme: 'dark',
 }
 
 const isActive = (f: FilterState) =>
