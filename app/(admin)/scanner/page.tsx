@@ -2,6 +2,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { AdminTopbar } from '@/components/admin/AdminTopbar'
 import { ScannerPageClient } from './ScannerPageClient'
+import { PAGE_SIZE } from '@/lib/scanner/results-url'
 import type { ScanStatus, ScanResult } from '@/types/scanner'
 
 export const dynamic = 'force-dynamic'
@@ -9,13 +10,13 @@ export const dynamic = 'force-dynamic'
 export default async function ScannerPage() {
   const supabase = await createSupabaseServerClient()
 
-  const [{ data: statusData }, { data: resultsData }] = await Promise.all([
+  const [{ data: statusData }, { data: resultsData, count: resultsCount }] = await Promise.all([
     supabase.from('scan_status').select('*').eq('id', 1).single(),
     supabase
       .from('scan_results')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('score', { ascending: false })
-      .limit(100),
+      .range(0, PAGE_SIZE - 1),
   ])
 
   const status: ScanStatus = statusData ?? {
@@ -34,7 +35,7 @@ export default async function ScannerPage() {
   return (
     <div className="flex flex-col h-full">
       <AdminTopbar />
-      <ScannerPageClient initialStatus={status} initialResults={results} />
+      <ScannerPageClient initialStatus={status} initialResults={results} initialTotal={resultsCount ?? results.length} />
     </div>
   )
 }
