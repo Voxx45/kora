@@ -121,7 +121,7 @@ export function ScannerResultsToolbar({ filters, total, onFilterChange, onReset 
           </button>
         )}
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
-          <span style={{ color: '#fff', fontWeight: 600 }}>{total.toLocaleString('fr-FR')}</span> résultat{total > 1 ? 's' : ''}
+          <span style={{ color: '#fff', fontWeight: 600 }}>{(total ?? 0).toLocaleString('fr-FR')}</span> résultat{(total ?? 0) > 1 ? 's' : ''}
         </span>
       </div>
     </div>
