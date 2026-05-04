@@ -29,6 +29,7 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
   const { openDrawer } = useDrawer()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstMount = useRef(true)
+  const isFirstQ = useRef(true)
 
   const fetchResults = useCallback(async (f: FilterState) => {
     const res = await fetch(buildResultsUrl(f))
@@ -48,7 +49,7 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
 
   // q → debounce 300ms
   useEffect(() => {
-    if (isFirstMount.current) return
+    if (isFirstQ.current) { isFirstQ.current = false; return }
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => fetchResults(filters), 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
