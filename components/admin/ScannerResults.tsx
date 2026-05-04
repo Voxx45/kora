@@ -29,7 +29,13 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
   const { openDrawer } = useDrawer()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstMount = useRef(true)
+  // Separate ref needed: isFirstMount is set to false by the non-q effect first,
+  // so a shared ref would cause the q effect to fire on first mount.
   const isFirstQ = useRef(true)
+  const filtersRef = useRef(filters)
+
+  // Keep filtersRef in sync so debounce/refresh effects always have current filters
+  useEffect(() => { filtersRef.current = filters })
 
   const fetchResults = useCallback(async (f: FilterState) => {
     const res = await fetch(buildResultsUrl(f))
@@ -51,14 +57,14 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
   useEffect(() => {
     if (isFirstQ.current) { isFirstQ.current = false; return }
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => fetchResults(filters), 300)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    debounceRef.current = setTimeout(() => fetchResults(filtersRef.current), 300)
+    return () => { if (debounceRef.current) { clearTimeout(debounceRef.current); debounceRef.current = null } }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.q])
 
   // Refresh signal from scanner tick
   useEffect(() => {
-    if (refreshKey > 0) fetchResults(filters)
+    if (refreshKey > 0) fetchResults(filtersRef.current)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey])
 
@@ -96,6 +102,10 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
         {filters.order === 'asc' ? '↑' : '↓'}
       </span>
     )
+  }
+
+  function safeHostname(url: string): string {
+    try { return new URL(url).hostname } catch { return url }
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -185,7 +195,7 @@ export function ScannerResults({ initialResults, initialTotal, refreshKey }: Sca
                       style={{ color: '#007AFF', fontSize: 11 }}
                       className="hover:underline"
                     >
-                      {new URL(result.website).hostname}
+                      {safeHostname(result.website)}
                     </a>
                   ) : (
                     <span style={{ color: 'rgba(255,59,48,0.8)', fontSize: 11 }}>Aucun site</span>
