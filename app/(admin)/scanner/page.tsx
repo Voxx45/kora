@@ -2,6 +2,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { AdminTopbar } from '@/components/admin/AdminTopbar'
 import { ScannerPageClient } from './ScannerPageClient'
+import { PAGE_SIZE } from '@/lib/scanner/results-url'
 import type { ScanStatus, ScanResult } from '@/types/scanner'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export default async function ScannerPage() {
       .from('scan_results')
       .select('*', { count: 'exact' })
       .order('score', { ascending: false })
-      .range(0, 49),
+      .range(0, PAGE_SIZE - 1),
   ])
 
   const status: ScanStatus = statusData ?? {
