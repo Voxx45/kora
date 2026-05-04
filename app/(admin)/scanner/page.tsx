@@ -34,7 +34,7 @@ export default async function ScannerPage() {
   return (
     <div className="flex flex-col h-full">
       <AdminTopbar />
-      <ScannerPageClient initialStatus={status} initialResults={results} />
+      <ScannerPageClient initialStatus={status} initialResults={results} initialTotal={results.length} />
     </div>
   )
 }

@@ -8,9 +8,10 @@ import type { ScanStatus, ScanResult } from '@/types/scanner'
 interface ScannerPageClientProps {
   initialStatus: ScanStatus
   initialResults: ScanResult[]
+  initialTotal: number
 }
 
-export function ScannerPageClient({ initialStatus, initialResults }: ScannerPageClientProps) {
+export function ScannerPageClient({ initialStatus, initialResults, initialTotal }: ScannerPageClientProps) {
   const [refreshKey, setRefreshKey] = useState(0)
 
   function handleTickComplete(newResults: number) {
@@ -25,6 +26,7 @@ export function ScannerPageClient({ initialStatus, initialResults }: ScannerPage
       />
       <ScannerResults
         initialResults={initialResults}
+        initialTotal={initialTotal}
         refreshKey={refreshKey}
       />
     </div>
