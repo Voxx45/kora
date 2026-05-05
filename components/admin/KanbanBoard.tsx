@@ -2,16 +2,25 @@
 import { useState, useTransition } from 'react'
 import {
   DndContext,
-  closestCorners,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   useDroppable,
+  pointerWithin,
+  closestCenter,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { updateProspectStage } from '@/lib/actions/prospects'
 import { ProspectCard } from './ProspectCard'
 import type { Prospect, PipelineStage } from '@/types/crm'
+
+// pointerWithin en priorité (parfait pour colonnes vides), sinon closestCenter
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) return pointerCollisions
+  return closestCenter(args)
+}
 
 const COLUMNS: { stage: PipelineStage; label: string }[] = [
   { stage: 'nouveau',      label: 'Nouveau' },
@@ -41,6 +50,7 @@ function DroppableColumn({
         background: isOver ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
         border: `1px solid ${isOver ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'}`,
         transition: 'background 0.15s, border 0.15s',
+        minHeight: 160,
       }}
     >
       <div className="flex items-center justify-between mb-1">
@@ -52,11 +62,22 @@ function DroppableColumn({
         </span>
       </div>
       <SortableContext items={items.map(p => p.id)} strategy={verticalListSortingStrategy}>
-        {items.map(p => <ProspectCard key={p.id} prospect={p} />)}
+        <div className="flex flex-col gap-2 flex-1">
+          {items.map(p => <ProspectCard key={p.id} prospect={p} />)}
+          {items.length === 0 && (
+            <div
+              className="flex-1 flex items-center justify-center rounded-[8px] text-[10px]"
+              style={{
+                minHeight: 80,
+                color: 'rgba(255,255,255,0.12)',
+                border: '1px dashed rgba(255,255,255,0.06)',
+              }}
+            >
+              Vide
+            </div>
+          )}
+        </div>
       </SortableContext>
-      {items.length === 0 && (
-        <div className="text-[10px] text-center py-4" style={{ color: 'rgba(255,255,255,0.12)' }}>Vide</div>
-      )}
     </div>
   )
 }
@@ -116,7 +137,7 @@ export function KanbanBoard({ initialProspects }: { initialProspects: Prospect[]
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
-      <DndContext collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-3 flex-1 overflow-x-auto pb-2">
           {COLUMNS.map(col => (
             <DroppableColumn
