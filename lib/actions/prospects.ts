@@ -48,8 +48,25 @@ export async function upsertProspect(data: ProspectFormData): Promise<{ id: stri
 export async function deleteProspect(id: string): Promise<void> {
   if (!id) throw new Error('Invalid id')
   const supabase = await createSupabaseServerClient()
+
+  // Fetch before delete to get entreprise + source for scan_results reset
+  const { data: prospect } = await supabase
+    .from('prospects')
+    .select('entreprise, source')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabase.from('prospects').delete().eq('id', id)
   if (error) throw new Error(error.message)
+
+  // If the prospect came from the scanner, reset the promoted flag so the
+  // scan result can be re-promoted without being stuck as "✓ CRM"
+  if (prospect?.source === 'scanner' && prospect?.entreprise) {
+    await supabase
+      .from('scan_results')
+      .update({ promoted: false, promoted_at: null })
+      .eq('name', prospect.entreprise)
+  }
 }
 
 export async function updateProspectNotes(id: string, notes: string): Promise<void> {
